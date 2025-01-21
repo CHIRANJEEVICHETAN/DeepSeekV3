@@ -3,7 +3,7 @@ import { Send, Paperclip } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
 
 interface ChatInputProps {
-  onSend: (message: string, image?: File) => void;
+  onSend: (message: string) => void;
   disabled: boolean;
 }
 
@@ -16,7 +16,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (input.trim() && !disabled) {
-      onSend(input, selectedImage || undefined);
+      onSend(input);
       setInput('');
       setSelectedImage(null);
       setIsExpanded(false);
@@ -39,7 +39,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+      <div className="bg-gray-800/80 backdrop-blur-lg rounded-2xl p-4 shadow-xl border border-gray-700/50 relative">
         {isExpanded && (
           <ImageUpload
             onImageUpload={setSelectedImage}
@@ -47,7 +47,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
             onClearImage={() => setSelectedImage(null)}
           />
         )}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-start">
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}
@@ -56,14 +56,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
               onKeyPress={handleKeyPress}
               onFocus={() => setIsExpanded(true)}
               placeholder="Type your message here..."
-              className="w-full pl-12 pr-3 py-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-[60px] max-h-[200px] transition-all"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-700/50 text-white placeholder-gray-400 
+                border border-gray-600/50 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 
+                resize-none min-h-[56px] max-h-[200px] transition-all shadow-inner
+                backdrop-blur-sm"
               disabled={disabled}
               rows={1}
             />
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-300 transition-colors"
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 
+                hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-600/30"
             >
               <Paperclip className="w-5 h-5" />
             </button>
@@ -71,7 +75,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
           <button
             type="submit"
             disabled={disabled || !input.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[60px]"
+            className="px-5 py-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 
+              transition-all disabled:opacity-50 disabled:cursor-not-allowed 
+              flex items-center justify-center min-w-[56px] h-[56px]
+              shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 
+              active:translate-y-0.5 active:shadow-md
+              disabled:shadow-none disabled:hover:bg-blue-600
+              border border-blue-500/50 hover:border-blue-400/50
+              bg-gradient-to-b from-blue-500 to-blue-600
+              -mt-0.4"
           >
             <Send className="w-5 h-5" />
           </button>

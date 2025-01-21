@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ChatInput } from './components/ChatInput';
 import { ChatMessage } from './components/ChatMessage';
@@ -7,11 +7,12 @@ import { ExamplePrompts } from './components/ExamplePrompts';
 import { Sidebar } from './components/Sidebar';
 import { useChat } from './hooks/useChat';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { Menu } from 'lucide-react';
+import { Square } from 'lucide-react';
+import { Chat } from './types';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { messages, isLoading, error, sendMessage, clearChat } = useChat();
+  const { messages, isLoading, error, sendMessage, clearChat, stopGeneration, updateMessages } = useChat();
   const {
     chats,
     activeChat,
@@ -22,24 +23,30 @@ function App() {
     deleteChat,
     updateSettings,
   } = useLocalStorage();
+  const [showExamplePrompts, setShowExamplePrompts] = useState(true);
 
   useEffect(() => {
     if (activeChat) {
-      updateChat(activeChat, messages);
+      updateChat(activeChat, {
+        messages: messages,
+        lastUpdated: new Date()
+      });
     }
   }, [messages, activeChat]);
 
-  const handleSendMessage = (content: string, image?: File) => {
+  const handleSendMessage = (content: string) => {
     if (!activeChat) {
       const newChatId = createNewChat();
       setActiveChat(newChatId);
     }
+    setShowExamplePrompts(false);
     sendMessage(content);
   };
 
   const handleNewChat = () => {
     clearChat();
     createNewChat();
+    setShowExamplePrompts(true);
   };
 
   const handleSelectChat = (chatId: string) => {
@@ -52,17 +59,36 @@ function App() {
     setIsSidebarOpen(false);
   };
 
-  return (
-    <div className={`min-h-screen bg-gray-900 flex flex-col ${settings.theme}`}>
-      <Header />
-      
-      <button
-        onClick={() => setIsSidebarOpen(true)}
-        className="fixed left-4 top-20 p-3 bg-gray-800 rounded-lg text-gray-300 hover:text-white transition-colors z-40"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+  const handleUpdateChat = (chatId: string, updates: Partial<Chat>) => {
+    updateChat(chatId, updates);
+  };
 
+  const handleEditMessage = (messageIndex: number, newContent: string) => {
+    if (messages[messageIndex]?.isUser) {
+      // Only update if content has changed
+      if (messages[messageIndex].content !== newContent) {
+        const updatedMessages = messages.slice(0, messageIndex + 1);
+        updatedMessages[messageIndex] = {
+          ...updatedMessages[messageIndex],
+          content: newContent,
+        };
+        
+        updateMessages(updatedMessages);
+        sendMessage(newContent, true);
+      }
+    }
+  };
+
+  // Add theme-specific classes
+  const themeClasses = {
+    dark: 'bg-gray-900 text-white',
+    light: 'bg-white text-gray-900',
+  };
+
+  return (
+    <div className={`min-h-screen flex flex-col ${themeClasses[settings.theme]}`}>
+      <Header onMenuClick={() => setIsSidebarOpen(true)} />
+      
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -73,14 +99,32 @@ function App() {
         onSelectChat={handleSelectChat}
         onDeleteChat={deleteChat}
         onUpdateSettings={updateSettings}
+        onUpdateChat={handleUpdateChat}
       />
       
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
-        <div className="flex-1 space-y-4 mb-4">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col animate-fadeIn">
+        <div className="flex-1 space-y-4 mb-4 relative">
           {messages.map((message, index) => (
-            <ChatMessage key={index} message={message} />
+            <ChatMessage 
+              key={index} 
+              message={message} 
+              isLatest={index === messages.length - 1}
+              onEdit={handleEditMessage}
+              messageIndex={index}
+            />
           ))}
-          {isLoading && <LoadingSpinner />}
+          {isLoading && (
+            <div className="flex items-center justify-center gap-4">
+              <LoadingSpinner />
+              <button
+                onClick={stopGeneration}
+                className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors flex items-center gap-2"
+              >
+                <Square className="w-4 h-4" />
+                Stop generating
+              </button>
+            </div>
+          )}
           {error && (
             <div className="p-4 bg-red-900/50 text-red-200 rounded-lg border border-red-700">
               {error}
@@ -89,7 +133,10 @@ function App() {
         </div>
 
         <div className="sticky bottom-0 bg-gray-900 pt-4 space-y-4">
-          <ExamplePrompts onSelectPrompt={(prompt) => handleSendMessage(prompt)} />
+          <ExamplePrompts 
+            onSelectPrompt={(prompt) => handleSendMessage(prompt)} 
+            show={showExamplePrompts && (!messages.length || !activeChat)}
+          />
           <ChatInput onSend={handleSendMessage} disabled={isLoading} />
         </div>
       </main>

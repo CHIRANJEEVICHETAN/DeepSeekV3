@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { StoredData, Chat, Message, Settings } from '../types';
+import { Chat, Settings } from '../types';
 
 const STORAGE_KEY = 'chat_data';
 const MAX_CHATS = 50;
@@ -10,6 +10,16 @@ const defaultSettings: Settings = {
   notifications: true,
   soundEnabled: true,
 };
+
+interface StoredChat extends Omit<Chat, 'lastUpdated'> {
+  lastUpdated: string;
+}
+
+interface StoredData {
+  chats: StoredChat[];
+  settings: Settings;
+  activeChat: string | null;
+}
 
 export const useLocalStorage = () => {
   const [data, setData] = useState<StoredData>(() => {
@@ -37,11 +47,11 @@ export const useLocalStorage = () => {
   }, [data]);
 
   const createNewChat = () => {
-    const newChat: Chat = {
+    const newChat: StoredChat = {
       id: uuidv4(),
       title: 'New Chat',
       messages: [],
-      lastUpdated: new Date(),
+      lastUpdated: new Date().toISOString(),
     };
 
     setData(prev => {
@@ -56,16 +66,15 @@ export const useLocalStorage = () => {
     return newChat.id;
   };
 
-  const updateChat = (chatId: string, messages: Message[]) => {
+  const updateChat = (chatId: string, updates: Partial<Chat>) => {
     setData(prev => {
       const chats = prev.chats.map(chat => {
         if (chat.id === chatId) {
-          const title = messages[0]?.content.slice(0, 30) + '...' || 'New Chat';
           return {
             ...chat,
-            title,
-            messages,
+            ...updates,
             lastUpdated: new Date().toISOString(),
+            messages: updates.messages || chat.messages,
           };
         }
         return chat;
@@ -97,7 +106,7 @@ export const useLocalStorage = () => {
     chats: data.chats.map(chat => ({
       ...chat,
       lastUpdated: new Date(chat.lastUpdated),
-    })),
+    })) as Chat[],
     activeChat: data.activeChat,
     settings: data.settings,
     createNewChat,

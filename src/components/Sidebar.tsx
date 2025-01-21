@@ -1,5 +1,5 @@
-import React from 'react';
-import { Settings, MessageCircle, ChevronLeft, Moon, Sun, Bell, BellOff, Volume2, VolumeX, Plus, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, MessageCircle, ChevronLeft, Bell, BellOff, Volume2, VolumeX, Plus, Trash2, Edit2, Check } from 'lucide-react';
 import { Chat } from '../types';
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ interface SidebarProps {
   onSelectChat: (chatId: string) => void;
   onDeleteChat: (chatId: string) => void;
   onUpdateSettings: (settings: any) => void;
+  onUpdateChat: (chatId: string, updatedChat: Partial<Chat>) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -28,7 +29,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onDeleteChat,
   onUpdateSettings,
+  onUpdateChat,
 }) => {
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
+  const [apiKey, setApiKey] = useState(localStorage.getItem('deepseek_api_key') || '');
+
+  const handleEditStart = (chat: Chat) => {
+    setEditingChatId(chat.id);
+    setEditTitle(chat.title);
+  };
+
+  const handleEditSave = () => {
+    if (editingChatId && editTitle.trim()) {
+      onUpdateChat(editingChatId, { title: editTitle.trim() });
+      setEditingChatId(null);
+    }
+  };
+
   return (
     <div
       className={`fixed inset-y-0 left-0 w-80 bg-gray-800 transform transition-transform duration-300 ease-in-out ${
@@ -68,21 +87,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   ? 'bg-blue-600/20 text-blue-100'
                   : 'bg-gray-700/50 text-gray-200 hover:bg-gray-700'
               }`}
-              onClick={() => onSelectChat(chat.id)}
+              onClick={() => !editingChatId && onSelectChat(chat.id)}
             >
-              <h3 className="font-medium truncate pr-8">{chat.title}</h3>
+              {editingChatId === chat.id ? (
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleEditSave();
+                      if (e.key === 'Escape') setEditingChatId(null);
+                    }}
+                    className="bg-gray-600 text-white px-2 py-1 rounded-md w-full"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleEditSave}
+                    className="p-1 text-green-400 hover:text-green-300"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h3 className="font-medium truncate pr-16">{chat.title}</h3>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditStart(chat);
+                      }}
+                      className="p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-400 transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteChat(chat.id);
+                      }}
+                      className="p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
               <span className="text-xs text-gray-400 block mt-1">
                 {chat.lastUpdated.toLocaleString()}
               </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteChat(chat.id);
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
         </div>
@@ -93,21 +147,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Settings
           </h3>
           <div className="space-y-4">
-            <button
-              onClick={() =>
-                onUpdateSettings({
-                  theme: settings.theme === 'dark' ? 'light' : 'dark',
-                })
-              }
-              className="w-full p-2 flex items-center justify-between text-gray-300 hover:text-white transition-colors"
-            >
-              <span>Theme</span>
-              {settings.theme === 'dark' ? (
-                <Moon className="w-5 h-5" />
-              ) : (
-                <Sun className="w-5 h-5" />
-              )}
-            </button>
             <button
               onClick={() =>
                 onUpdateSettings({ notifications: !settings.notifications })
@@ -134,6 +173,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <VolumeX className="w-5 h-5" />
               )}
             </button>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Theme</label>
+              <select
+                value={settings.theme}
+                onChange={(e) => onUpdateSettings({ theme: e.target.value as 'dark' | 'light' })}
+                className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => setIsApiModalOpen(true)}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Set API Key
+            </button>
+
+            {isApiModalOpen && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Set DeepSeek API Key</h3>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your API key"
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setIsApiModalOpen(false)}
+                      className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('deepseek_api_key', apiKey);
+                        setIsApiModalOpen(false);
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

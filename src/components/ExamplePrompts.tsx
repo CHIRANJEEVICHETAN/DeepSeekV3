@@ -12,12 +12,20 @@ const examplePrompts = [
   "Explain blockchain technology",
 ];
 
-export const ExamplePrompts: React.FC<{ onSelectPrompt: (prompt: string) => void }> = ({
+interface ExamplePromptsProps {
+  onSelectPrompt: (prompt: string) => void;
+  show: boolean; // New prop to control visibility
+}
+
+export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({
   onSelectPrompt,
+  show,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!show) return;
+
     const scroll = () => {
       if (scrollRef.current) {
         if (
@@ -33,12 +41,14 @@ export const ExamplePrompts: React.FC<{ onSelectPrompt: (prompt: string) => void
 
     const interval = setInterval(scroll, 50);
     return () => clearInterval(interval);
-  }, []);
+  }, [show]);
+
+  if (!show) return null;
 
   return (
-    <div className="bg-gray-800/50 p-3 rounded-lg mb-4">
+    <div className="bg-gray-800/50 p-3 rounded-lg mb-4 animate-fadeIn">
       <div className="flex items-center gap-2 mb-2">
-        <Lightbulb className="w-5 h-5 text-yellow-500" />
+        <Lightbulb className="w-5 h-5 text-yellow-500 animate-pulse" />
         <span className="text-gray-300 text-sm">Example prompts</span>
       </div>
       <div
@@ -51,7 +61,7 @@ export const ExamplePrompts: React.FC<{ onSelectPrompt: (prompt: string) => void
             <button
               key={index}
               onClick={() => onSelectPrompt(prompt)}
-              className="px-4 py-2 bg-gray-700/50 text-gray-300 rounded-full hover:bg-blue-600/20 hover:text-blue-200 transition-colors whitespace-nowrap flex-shrink-0"
+              className="px-4 py-2 bg-gray-700/50 text-gray-300 rounded-full hover:bg-blue-600/20 hover:text-blue-200 transition-all duration-200 whitespace-nowrap flex-shrink-0 hover:scale-105 transform"
             >
               {prompt}
             </button>
