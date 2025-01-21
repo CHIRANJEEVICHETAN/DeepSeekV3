@@ -8,6 +8,7 @@ export default {
         messageIn: 'messageIn 0.3s ease-out',
         pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'spin-slow': 'spin 3s linear infinite',
+        slideDown: 'slideDown 0.3s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -23,6 +24,10 @@ export default {
             opacity: '1',
             transform: 'translateY(0)'
           },
+        },
+        slideDown: {
+          '0%': { transform: 'translate(-50%, -100%)', opacity: '0' },
+          '100%': { transform: 'translate(-50%, 0)', opacity: '1' },
         },
       },
       boxShadow: {

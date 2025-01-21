@@ -24,6 +24,9 @@ function App() {
     updateSettings,
   } = useLocalStorage();
   const [showExamplePrompts, setShowExamplePrompts] = useState(true);
+  const [showApiKeyAlert, setShowApiKeyAlert] = useState(
+    !import.meta.env.VITE_DEEPSEEK_API_KEY && !localStorage.getItem('deepseek_api_key')
+  );
 
   useEffect(() => {
     if (activeChat) {
@@ -35,6 +38,13 @@ function App() {
   }, [messages, activeChat]);
 
   const handleSendMessage = (content: string) => {
+    // Check for API key first
+    if (!import.meta.env.VITE_DEEPSEEK_API_KEY && !localStorage.getItem('deepseek_api_key')) {
+      setIsSidebarOpen(true);
+      setShowApiKeyAlert(true);
+      return;
+    }
+
     if (!activeChat) {
       const newChatId = createNewChat();
       setActiveChat(newChatId);
@@ -89,6 +99,18 @@ function App() {
     <div className={`min-h-screen flex flex-col ${themeClasses[settings.theme]}`}>
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       
+      {showApiKeyAlert && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-yellow-500/90 text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm flex items-center gap-3 animate-slideDown">
+          <span>⚠️ Please set your API key in Settings to start chatting</span>
+          <button 
+            onClick={() => setShowApiKeyAlert(false)}
+            className="text-white/80 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
