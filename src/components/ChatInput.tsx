@@ -4,10 +4,11 @@ import { ImageUpload } from './ImageUpload';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onImageUpload: (file: File, imageUrl: string) => void;
   disabled: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSend, onImageUpload, disabled }) => {
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -42,7 +43,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
       <div className="bg-gray-800/80 backdrop-blur-lg rounded-2xl p-4 shadow-xl border border-gray-700/50 relative">
         {isExpanded && (
           <ImageUpload
-            onImageUpload={setSelectedImage}
+            onImageUpload={onImageUpload}
             selectedImage={selectedImage}
             onClearImage={() => setSelectedImage(null)}
           />
@@ -55,7 +56,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               onFocus={() => setIsExpanded(true)}
-              placeholder="Type your message here..."
+              placeholder="Type your message here... Use /image for image generation, /audio for audio generation, and /vision for vision capabilities."
               className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-700/50 text-white placeholder-gray-400 
                 border border-gray-600/50 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 
                 resize-none min-h-[56px] max-h-[200px] transition-all shadow-inner

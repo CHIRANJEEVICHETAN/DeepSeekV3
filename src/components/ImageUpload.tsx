@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Image as ImageIcon, X } from 'lucide-react';
 
 interface ImageUploadProps {
-  onImageUpload: (file: File) => void;
+  onImageUpload: (file: File, imageUrl: string) => void;
   selectedImage: File | null;
   onClearImage: () => void;
 }
@@ -13,9 +13,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   selectedImage,
   onClearImage,
 }) => {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
-      onImageUpload(acceptedFiles[0]);
+      const file = acceptedFiles[0];
+      const imageUrl = URL.createObjectURL(file);
+      onImageUpload(file, imageUrl);
     }
   }, [onImageUpload]);
 

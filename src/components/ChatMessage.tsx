@@ -5,6 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import { Message } from '../types';
+import { AudioMessage } from './AudioMessage';
 
 interface ChatMessageProps {
   message: Message;
@@ -14,7 +15,7 @@ interface ChatMessageProps {
 }
 
 export const ChatMessage = React.memo(({ message, isLatest, onEdit, messageIndex }: ChatMessageProps) => {
-  const { content, isUser } = message;
+  const { content, isUser, type, mediaUrl } = message;
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(content);
@@ -120,6 +121,50 @@ export const ChatMessage = React.memo(({ message, isLatest, onEdit, messageIndex
     }
   };
 
+  const renderContent = () => {
+    switch (type) {
+      case 'image':
+        return (
+          <div className="max-w-lg">
+            <img 
+              src={mediaUrl} 
+              alt={content}
+              className="w-full h-auto rounded-lg shadow-lg object-contain bg-gray-800"
+              loading="lazy"
+              onError={(e) => {
+                console.error('Image loading error:', e);
+                const img = e.target as HTMLImageElement;
+                img.onerror = null; // Prevent infinite loop
+                img.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxsaW5lIHgxPSI2IiB5MT0iNiIgeDI9IjE4IiB5Mj0iMTgiPjwvbGluZT48bGluZSB4MT0iNiIgeTE9IjE4IiB4Mj0iMTgiIHkyPSI2Ij48L2xpbmU+PC9zdmc+'; // Show error icon
+              }}
+              style={{ minHeight: '200px', maxHeight: '512px' }}
+            />
+            <p className="mt-2 text-sm text-gray-400">{content}</p>
+          </div>
+        );
+      case 'audio':
+        return (
+          <div className="w-full max-w-lg">
+            <AudioMessage url={mediaUrl!} />
+            <p className="mt-2 text-sm text-gray-400">{content}</p>
+          </div>
+        );
+      default:
+        return isUser ? (
+          <p className="whitespace-pre-wrap">{content}</p>
+        ) : (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              code: CodeBlock
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        );
+    }
+  };
+
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''} animate-messageIn`}>
       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -203,18 +248,7 @@ export const ChatMessage = React.memo(({ message, isLatest, onEdit, messageIndex
                   </button>
                 )}
                 <div className="prose prose-invert max-w-none">
-                  {isUser ? (
-                    <p className="whitespace-pre-wrap">{content}</p>
-                  ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        code: CodeBlock
-                      }}
-                    >
-                      {content}
-                    </ReactMarkdown>
-                  )}
+                  {renderContent()}
                 </div>
               </>
             )}

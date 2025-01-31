@@ -12,7 +12,7 @@ import { Chat } from './types';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { messages, isLoading, error, sendMessage, clearChat, stopGeneration, updateMessages } = useChat();
+  const { messages, isLoading, error, sendMessage, clearChat, stopGeneration, updateMessages, handleImageUpload } = useChat();
   const {
     chats,
     activeChat,
@@ -159,7 +159,11 @@ function App() {
             onSelectPrompt={(prompt) => handleSendMessage(prompt)} 
             show={showExamplePrompts && (!messages.length || !activeChat)}
           />
-          <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+          <ChatInput 
+            onSend={handleSendMessage} 
+            onImageUpload={handleImageUpload}
+            disabled={isLoading} 
+          />
         </div>
       </main>
     </div>

@@ -10,6 +10,9 @@ export interface Message {
   content: string;
   isUser: boolean;
   timestamp: Date;
+  type: 'text' | 'image' | 'audio';
+  mediaUrl?: string;
+  mediaType?: 'image/png' | 'image/jpeg' | 'audio/mpeg';
 }
 
 export interface Chat {
